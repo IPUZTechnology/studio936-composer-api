@@ -1,0 +1,31 @@
+# Despliega el backend de Escenario a Cloudflare Workers automáticamente
+# cada vez que subes cambios a la rama "main".
+#
+# ANTES DE QUE FUNCIONE, necesitas agregar 2 secretos en GitHub:
+# Repo -> Settings -> Secrets and variables -> Actions -> New repository secret
+#
+#   CLOUDFLARE_API_TOKEN   -> lo creas en https://dash.cloudflare.com/profile/api-tokens
+#                             (usa la plantilla "Edit Cloudflare Workers")
+#   CLOUDFLARE_ACCOUNT_ID  -> lo ves en el dashboard de Cloudflare, barra lateral
+#                             derecha de cualquier dominio, o en la URL del dashboard
+
+name: Deploy Escenario Worker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # también lo puedes correr manualmente desde la pestaña Actions
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Desplegar con Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
