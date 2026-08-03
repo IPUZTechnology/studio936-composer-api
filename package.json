@@ -1,0 +1,19 @@
+{
+  "name": "studio936-escenario-api",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:create": "wrangler d1 create studio936-escenario",
+    "r2:create": "wrangler r2 bucket create studio936-escenario-media",
+    "secret:auth": "wrangler secret put BETTER_AUTH_SECRET"
+  },
+  "dependencies": {
+    "better-auth": "^1.5.0",
+    "better-auth-cloudflare": "^1.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
