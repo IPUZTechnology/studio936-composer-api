@@ -143,3 +143,14 @@ git push                    # dispara el despliegue automático también
 - Borrar el endpoint temporal `/api/setup-auth-db`.
 - Definir el modelo de datos real de Escenario (más allá de la tabla `songs` de prueba).
 - Empezar a conectar el frontend (`suite-pro-library.js`) con esta API.
+
+### Sesión 2 — Fase A: login dentro del 936 Player
+
+**Qué se hizo:**
+- Botón "Iniciar sesión" en el header del 936 Player, con popover de Entrar/Crear cuenta.
+- Conectado al backend real (`/api/auth/sign-in/email`, `/api/auth/sign-up/email`, `/api/auth/sign-out`, `/api/me`).
+- Arreglo crítico en el backend: CORS reflejando el origen real (no `*`) + `trustedOrigins` + cookies con `SameSite=None; Secure` — necesario porque la app (GitHub Pages) y el backend (Workers) son dominios distintos.
+
+**Confirmado con prueba real:** login desde navegador nuevo, refrescar la página, la sesión se mantuvo — la cookie cruza entre dominios correctamente.
+
+**Qué sigue:** Fase B — sincronizar datos livianos (composiciones, listas, álbumes) a D1.
