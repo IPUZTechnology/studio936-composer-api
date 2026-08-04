@@ -16,7 +16,7 @@ compatibility_date = "2026-01-01"
 [[d1_databases]]
 binding = "DB"                              # así se llama adentro del código: env.DB
 database_name = "studio936-escenario"
-database_id = "REEMPLAZAR-CON-TU-DATABASE-ID"
+database_id = "a8702683-2da2-448b-bd6a-d8284f8f20df"
 
 # --- R2: almacenamiento (audio, video, carátulas) ---
 [[r2_buckets]]

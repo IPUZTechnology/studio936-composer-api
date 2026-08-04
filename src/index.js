@@ -16,9 +16,6 @@ function json(data, status = 200) {
     status,
     headers: {
       "Content-Type": "application/json",
-      // CORS abierto por ahora (para poder probar desde tu app en el navegador).
-      // Antes de producción real, restringir "Access-Control-Allow-Origin"
-      // al dominio exacto de Studio 936 Composer.
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -28,8 +25,6 @@ function json(data, status = 200) {
 }
 
 async function ensureSchema(env) {
-  // Crea la tabla de prueba si no existe todavía — así el primer deploy
-  // ya deja la base de datos lista, sin que tengas que correr SQL a mano.
   await env.DB.exec(`
     CREATE TABLE IF NOT EXISTS songs (
       id TEXT PRIMARY KEY,
@@ -99,17 +94,14 @@ export default {
     }
 
     // Cambio: login real de usuarios. Se crea una instancia de auth NUEVA
-    // en cada petición (no una sola reutilizada) — el runtime de Workers
-    // aísla cada request, y reutilizar una instancia global es la causa
-    // documentada de fallas intermitentes (503, colgadas de varios
-    // segundos) en producción con esta librería.
+    // en cada petición (no una sola reutilizada) — ver aviso en auth.js.
     if (url.pathname.startsWith("/api/auth/")) {
-      const auth = createAuth(env, request.cf, url.origin);
+      const auth = createAuth(env, url.origin);
       return auth.handler(request);
     }
 
     if (url.pathname === "/api/me") {
-      const auth = createAuth(env, request.cf, url.origin);
+      const auth = createAuth(env, url.origin);
       const session = await auth.api.getSession({ headers: request.headers });
       if (!session) return json({ error: "No autenticado." }, 401);
       return json({ user: session.user });
@@ -118,4 +110,3 @@ export default {
     return json({ error: "No encontrado." }, 404);
   },
 };
-

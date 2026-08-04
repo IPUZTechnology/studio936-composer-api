@@ -1,6 +1,6 @@
 {
   "name": "studio936-escenario-api",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
@@ -10,8 +10,7 @@
     "secret:auth": "wrangler secret put BETTER_AUTH_SECRET"
   },
   "dependencies": {
-    "better-auth": "^1.5.0",
-    "better-auth-cloudflare": "^1.0.0"
+    "better-auth": "^1.5.0"
   },
   "devDependencies": {
     "wrangler": "^3.90.0"
