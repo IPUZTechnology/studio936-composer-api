@@ -114,7 +114,10 @@ git push                    # dispara el despliegue automático también
 ## Pendientes activos
 
 1. **Borrar `/api/setup-auth-db`** del código — ya cumplió su función (creó las tablas), no debe quedar en el Worker de forma permanente.
-2. **Conectar `suite-pro-library.js`** (la app real) para que hable con esta API en vez de (o además de) `localStorage`.
+2. **Conectar `suite-pro-library.js`** (la app real) para que hable con esta API en vez de (o además de) `localStorage`. Decisión confirmada: **TODO se sincroniza desde ya, sin migración de nada anterior** (no existe ninguna cuenta previa que traer — se parte de cero).
+   - **Fase A:** pantalla de login/registro dentro del 936 Player.
+   - **Fase B:** sincronizar datos livianos (composiciones, títulos, listas, álbumes, radios, etiquetas) a D1.
+   - **Fase C:** sincronizar archivos pesados (audio real, video, carátulas) a R2 — la parte más grande de construir (subida de archivos real, progreso, manejo de conexión lenta).
 3. **El modelo de datos completo de Escenario**: álbumes públicos, listas, estrellas/reacciones, "busco quién complemente", reportar contenido.
 4. Certificado de creación / registro de autoría — Fase 2, más adelante.
 5. Actualizar Wrangler a la versión 4 (`npm install --save-dev wrangler@4`) — seguimos en 3.114.17, funciona pero da warning de desactualizado en cada comando.
