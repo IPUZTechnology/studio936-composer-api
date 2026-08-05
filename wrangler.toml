@@ -1,42 +1,24 @@
 # Configuración de Wrangler para "Escenario" (backend de Studio 936)
-#
-# QUÉ TOCAR ANTES DE DESPLEGAR (todo lo que dice "REEMPLAZAR"):
-# 1. `name` — el nombre de tu Worker (aparece en la URL: <name>.<tu-subdominio>.workers.dev)
-# 2. `database_id` de D1 — lo obtienes corriendo:
-#      wrangler d1 create studio936-escenario
-#    (te da un ID, pégalo abajo)
-# 3. `bucket_name` de R2 — lo creas con:
-#      wrangler r2 bucket create studio936-escenario-media
-
-name = "studio936-escenario-api"   # REEMPLAZAR si quieres otro nombre
+name = "studio936-escenario-api"
 main = "src/index.js"
 compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # --- D1: base de datos (usuarios, canciones publicadas, listas, reacciones) ---
 [[d1_databases]]
-binding = "DB"                              # así se llama adentro del código: env.DB
+binding = "DB"
 database_name = "studio936-escenario"
 database_id = "a8702683-2da2-448b-bd6a-d8284f8f20df"
 
 # --- R2: almacenamiento (audio, video, carátulas) ---
 [[r2_buckets]]
-binding = "MEDIA"                           # así se llama adentro del código: env.MEDIA
-bucket_name = "studio936-escenario-media"   # REEMPLAZAR si usaste otro nombre
+binding = "MEDIA"
+bucket_name = "studio936-escenario-media"
 
 # --- Variables de entorno no secretas ---
 [vars]
 ENVIRONMENT = "production"
-# REEMPLAZAR con la URL real de tu Worker una vez desplegado la primera vez
-# (algo como "https://studio936-escenario-api.tu-subdominio.workers.dev")
-BETTER_AUTH_URL = "REEMPLAZAR-CON-LA-URL-DE-TU-WORKER"
+BETTER_AUTH_URL = "https://studio936-escenario-api.ripuz.workers.dev"
 
-# Nota sobre secretos (API keys, JWT secret para better-auth, etc.):
-# NUNCA van en este archivo. Se configuran con:
+# Nota sobre secretos: NUNCA van en este archivo. Se configuran con:
 #   wrangler secret put NOMBRE_DEL_SECRETO
-# o desde el workflow de GitHub Actions (ver deploy.yml) usando GitHub Secrets.
-#
-# BETTER_AUTH_SECRET es obligatorio para el login de usuarios — genera uno
-# real así (no uses un valor inventado, debe ser aleatorio de verdad):
-#   openssl rand -hex 32
-# y configúralo con:
-#   npm run secret:auth
