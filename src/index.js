@@ -47,10 +47,14 @@ async function ensureSchema(env) {
       playlists TEXT,
       preview_audio_id TEXT,
       project TEXT,
+      status TEXT NOT NULL DEFAULT 'draft',
       updated_at INTEGER NOT NULL,
       created_at INTEGER NOT NULL
     )`
   ).run();
+  // Cambio 235: agregar columna status a tablas existentes que no la tengan
+  // (ALTER TABLE IF NOT EXISTS no existe en SQLite, así que ignoramos el error)
+  try { await env.DB.prepare("ALTER TABLE compositions ADD COLUMN status TEXT NOT NULL DEFAULT 'draft'").run(); } catch(_) {}
 }
 
 // Fase B: helper compartido — confirma que hay sesión activa, o corta con
@@ -72,6 +76,7 @@ function rowToComposition(row) {
     playlists: row.playlists ? JSON.parse(row.playlists) : [],
     previewAudioId: row.preview_audio_id || null,
     project: row.project ? JSON.parse(row.project) : {},
+    status: row.status || 'draft',
     updated: row.updated_at,
   };
 }
@@ -172,13 +177,13 @@ export default {
       const now = Date.now();
       await env.DB.prepare(
         `INSERT INTO compositions
-          (id, user_id, title, author, genre, album_id, playlists, preview_audio_id, project, updated_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          (id, user_id, title, author, genre, album_id, playlists, preview_audio_id, project, status, updated_at, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         id, session.user.id, body.title, body.author || "", body.genre || "",
         body.albumId || null, JSON.stringify(body.playlists || []),
         body.previewAudioId || null, JSON.stringify(body.project || {}),
-        now, now
+        body.status || 'draft', now, now
       ).run();
       return json({ ok: true, id }, 200, request);
     }
@@ -196,12 +201,13 @@ export default {
       const result = await env.DB.prepare(
         `UPDATE compositions SET
            title = ?, author = ?, genre = ?, album_id = ?, playlists = ?,
-           preview_audio_id = ?, project = ?, updated_at = ?
+           preview_audio_id = ?, project = ?, status = ?, updated_at = ?
          WHERE id = ? AND user_id = ?`
       ).bind(
         body.title, body.author || "", body.genre || "", body.albumId || null,
         JSON.stringify(body.playlists || []), body.previewAudioId || null,
-        JSON.stringify(body.project || {}), Date.now(), id, session.user.id
+        JSON.stringify(body.project || {}), body.status || 'draft',
+        Date.now(), id, session.user.id
       ).run();
       if (result.meta.changes === 0) {
         return json({ error: "No encontrada, o no es tuya." }, 404, request);
