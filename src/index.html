@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Studio 936 Composer v25 Song Structure Builder</title>
+<link rel="stylesheet" href="css/styles.css?v=cambio-176-yt-api" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet" />
+</head>
+<body>
+<header>
+    <div class="brand" style="margin-left:34px;text-align:center;">
+        <img src="docs/Studio_936_logo.png" alt="Studio 936" style="height:84px;width:auto;display:inline-block;margin:0 auto;" onerror="this.style.display='none'; this.closest('.brand').querySelector('h1').style.display='block';" />
+        <h1 style="display:none;">Studio 936</h1>
+        <div style="font-size:.75rem;color:#5be8c9;font-weight:800;letter-spacing:1.5px;margin-top:-14px;text-transform:uppercase;text-align:center;">Composer Station</div>
+        <input id="songAuthor" class="author-input" value="Rafael Ipuz" aria-label="Autor de la canción" placeholder="Autor / Compositor" style="margin-top:4px;max-width:170px;font-family:'Dancing Script',cursive;font-size:1.3rem;font-weight:600;background:transparent;border:none;text-align:center;display:block;margin-left:auto;margin-right:auto;" />
+    </div>
+    <div class="song-center">
+        <input id="songTitle" class="song-title-input" value="Despertar de un Sueño" aria-label="Nombre de la canción" />
+        <div class="song-row">
+            <select id="styleSelect" class="select style-select" title="Tipo de música">
+                <option value="funk">Funk</option>
+                <option value="rock">Rock</option>
+                <option value="ballad">Balada</option>
+                <option value="bossa">Bossa Nova</option>
+                <option value="jazz">Jazz</option>
+                <option value="blues">Blues</option>
+                <option value="pop">Pop</option>
+                <option value="bolero">Bolero</option>
+                <option value="salsa">Salsa</option>
+                <option value="cumbia">Cumbia</option>
+                <option value="reggae">Reggae</option>
+            </select>
+            <select id="instrumentSelect" class="select instrument-select" title="Instrumento guía">
+                <option value="piano">Piano</option>
+                <option value="epiano">Piano eléctrico</option>
+                <option value="guitar">Guitarra</option>
+                <option value="ukulele">Ukelele</option>
+                <option value="bass">Bajo eléctrico</option>
+                <option value="lead">Guitarra Lead</option>
+                <option value="drums">Batería</option>
+                <option value="organ">Órgano</option>
+                <option value="sax">Saxo guía</option>
+                <option value="synth">Synth</option>
+            </select>
+            <select id="sectionSelect" class="select section-select" title="Sección de la canción">
+                <option value="__song__" style="color:#00ffcc;font-weight:700;">Canción completa</option>
+                <option value="intro">Introducción</option>
+                <option value="verse">Verso</option>
+                <option value="verse1">Verso 1</option>
+                <option value="verse2">Verso 2</option>
+                <option value="verse3">Verso 3</option>
+                <option value="verse4">Verso 4</option>
+                <option value="prechorus">Pre-coro</option>
+                <option value="chorus">Coro</option>
+                <option value="bridge">Puente</option>
+                <option value="interlude">Interludio</option>
+                <option value="solo">Solo</option>
+                <option value="outro">Outro</option>
+            </select>
+            <select id="s936KeySelect" class="select" title="Clave actual de la canción — elige una nota para transponer">
+                <option value="C">Clave: C</option>
+                <option value="C#">Clave: C#</option>
+                <option value="D">Clave: D</option>
+                <option value="D#">Clave: D#</option>
+                <option value="E">Clave: E</option>
+                <option value="F">Clave: F</option>
+                <option value="F#">Clave: F#</option>
+                <option value="G">Clave: G</option>
+                <option value="G#">Clave: G#</option>
+                <option value="A">Clave: A</option>
+                <option value="A#">Clave: A#</option>
+                <option value="B">Clave: B</option>
+            </select>
+        </div>
+    </div>
+    <div class="tempo-zone">
+        <div class="bpm-line">
+            <button class="btn btn-dark img-icon-btn" id="metroBtn" data-tip="Metrónomo" style="padding:2px 4px;"><img src="docs/icon/Metronomo_studio936_icon.png" alt="Metrónomo" style="height:36px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" /><span style="display:none;">🥁</span></button>
+            <input type="range" id="bpmSlider" min="60" max="160" value="95" />
+            <button class="preset-btn" onclick="setBPM(100)">100</button>
+            <button class="preset-btn active" onclick="setBPM(110)">110</button>
+            <button class="preset-btn" onclick="setBPM(120)">120</button>
+            <div class="tempo-box"><div class="metronome-dot" id="metroDot"></div><div id="bpmDisplay">95</div></div>
+        </div>
+    </div>
+</header>
+
+<section class="status-bar">
+    <div class="now-box">
+        <div class="label-small">Sección actual</div>
+        <div id="sectionLabel">Introducción</div>
+        <div class="label-small" id="measureLabel">Compás 1 · Paso 1/16</div>
+    </div>
+    <div class="transport">
+        <button id="composeToggleBtn" class="btn btn-dark img-icon-btn" data-tip="Componer" onclick="window.Studio936SuitePro &amp;&amp; window.Studio936SuitePro.openArea &amp;&amp; window.Studio936SuitePro.openArea('compose');"><img src="docs/icon/Composer_studio_936_icon1.png" alt="Compose" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" /><span style="display:none;">Compose</span></button>
+        <button id="studioToggleBtn" class="btn btn-dark img-icon-btn" data-tip="Studio 936" onclick="window.Studio936SuitePro &amp;&amp; window.Studio936SuitePro.openArea &amp;&amp; window.Studio936SuitePro.openArea('studio');"><img src="docs/icon/Studio_936_ico.png" alt="Studio 936" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" /><span style="display:none;">Studio 936</span></button>
+        <button id="tableroBtn" class="btn btn-dark img-icon-btn" data-tip="Tocar-Partitura"><img src="docs/icon/Tablero_Practica_chart_icon.png" alt="Chart" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" /><span style="display:none;">Chart</span></button>
+        <button id="playBtn" class="btn btn-play" data-tip="Tocar Sección" style="display:inline-flex;align-items:center;gap:6px;">
+            <img class="icon-section-play" src="docs/icon/Play_session_936.png" alt="Play Sección" style="height:44px;width:auto;flex-shrink:0;" onerror="this.style.setProperty(&quot;display&quot;,&quot;none&quot;,&quot;important&quot;);" />
+            <img class="icon-section-stop" src="docs/icon/Pause_Seccion_936.png" alt="Pause Sección" style="height:44px;width:auto;flex-shrink:0;display:none;" onerror="this.style.setProperty(&quot;display&quot;,&quot;none&quot;,&quot;important&quot;);" />
+            <img class="icon-song-play" src="docs/icon/Play_song_936.png" alt="Play Canción" style="height:44px;width:auto;flex-shrink:0;display:none;" onerror="this.style.setProperty(&quot;display&quot;,&quot;none&quot;,&quot;important&quot;);" />
+            <img class="icon-song-stop" src="docs/icon/Pause_play__song.png" alt="Pause Canción" style="height:44px;width:auto;flex-shrink:0;display:none;" onerror="this.style.setProperty(&quot;display&quot;,&quot;none&quot;,&quot;important&quot;);" />
+            <span class="btn-label">Start Groove</span>
+        </button>
+        <button class="btn btn-dark img-icon-btn" id="channelMixerBtn" data-tip="Mezclador" onclick="window.Studio936ChannelMixer &amp;&amp; window.Studio936ChannelMixer.toggle &amp;&amp; window.Studio936ChannelMixer.toggle();"><img src="docs/icon/Instrument_setting_icon.png" alt="Canales" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" /><span style="display:none;">🎚</span></button>
+        <button class="btn btn-dark img-icon-btn" id="libraryBtn" data-tip="Librería" onclick="window.Studio936Library &amp;&amp; window.Studio936Library.toggle &amp;&amp; window.Studio936Library.toggle();"><img src="docs/icon/Music_book_studio936.png" alt="Librería" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" /><span style="display:none;">📚</span></button>
+    </div>
+    <div class="now-box">
+        <div class="label-small">Acorde actual</div>
+        <div id="chordLabel">Modo manual</div>
+        <div class="current-part-pill" id="currentPartTag">Parte: Introducción</div>
+        <div class="step-grid" id="stepGrid"></div>
+    </div>
+</section>
+<main class="main">
+    <div id="pianoContainer"><div class="keyboard" id="piano"></div></div>
+    <div id="fretboardContainer"><div class="fretboard-wrap"><div class="fretboard-head"><span id="fretboardTitle">Diapasón guitarra · vista de notas</span><span id="fretboardHint">Clic/toque para escuchar · 0-12 trastes</span></div><div class="fret-markers" id="fretMarkers"></div><div class="fretboard" id="fretboard"></div></div></div>
+    <section class="editor">
+        <div class="card">
+            <h3>Editor de progresión</h3>
+            <div id="editorSectionBadge" class="editor-section-badge">Mostrando: Introducción</div>
+            <div class="form-grid">
+                <div class="field full"><label>Acorde seleccionado</label><select id="chordSelect" class="select"></select></div>
+                <div class="field"><label>Nombre</label><input id="chordName" class="input" placeholder="Cmaj7, Fm9..." /></div>
+                <div class="field"><label>Bajo</label><input id="bassInput" class="input" placeholder="C2 / Do2" /></div>
+                <div class="field full"><label>Notas del acorde</label><input id="chordNotes" class="input" placeholder="E3 A3 D4 F4" /></div>
+                <div class="field"><label>Compases</label><input id="barsInput" class="input" type="number" min="1" max="16" value="1" /></div>
+                <div class="field"><label>Volumen groove</label><input id="grooveVol" class="input" type="number" min="1" max="10" value="7" /></div>
+            </div>
+            <div class="button-row">
+                <button class="mini-btn" id="previewBtn">Escuchar</button>
+                <button class="mini-btn primary" id="applyBtn">Aplicar</button>
+                <button class="mini-btn" id="addBtn">Agregar acorde</button>
+                <button class="mini-btn" id="dupBtn">Duplicar</button>
+                <button class="mini-btn danger" id="deleteBtn">Borrar</button>
+            </div>
+            <div class="hint">Notas: usa inglés o solfeo. Ejemplos: <b>C3 E3 G3 Bb3</b> o <b>Do3 Mi3 Sol3 Sib3</b>. Cada acorde puede durar 1, 2, 4 o más compases.</div>
+            <div class="note-map-box">
+                <div class="label-small">Mapa de notas de la sección seleccionada</div>
+                <div id="sectionNoteMap"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Sección y melodía / solo</h3>
+            <div class="section-list" id="sectionList"></div>
+            <div class="button-row">
+                <button class="mini-btn warn" id="resetSectionBtn">Reset sección</button>
+                <button class="mini-btn" id="resetAllBtn">Reset total</button>
+            </div>
+            <hr style="border:0;border-top:1px solid #303030;margin:12px 0" />
+            <div class="form-grid">
+                <div class="field"><label>Tonalidad de esta sección</label><input id="soloKey" class="input" placeholder="C / Do" value="C" /></div>
+                <div class="field"><label>Escala</label><select id="soloScale" class="select"><option value="minorPent">Pentatónica menor</option><option value="majorPent">Pentatónica mayor</option><option value="blues">Blues</option><option value="dorian">Dórica</option><option value="mixolydian">Mixolidia</option><option value="major">Mayor</option><option value="minor">Menor natural</option></select></div>
+                <div class="field full"><label>Melodía / solo de esta sección</label><textarea id="soloPhrase" class="textarea" placeholder="C4:2 Eb4:2 F4:1 G4:1 R:2 Bb4:2 G4:2 F4:4"></textarea></div>
+            </div>
+            <div class="button-row">
+                <button class="mini-btn solo" id="previewSoloBtn">Probar solo</button>
+                <button class="mini-btn" id="generateSoloBtn">Sugerir frase</button>
+                <button class="mini-btn primary" id="applySoloBtn">Guardar línea</button>
+                <button class="mini-btn danger" id="clearSoloBtn">Limpiar línea</button>
+            </div>
+            <div class="hint">Cada sección tiene su propia melodía/solo. Formato: <b>C4:2</b> = nota C4 durante 2 semicorcheas. <b>R:2</b> = silencio. Sin número dura 2 semicorcheas.</div>
+        </div>
+
+        <div class="card">
+            <h3>Guardar / compartir</h3>
+            <div class="export-grid">
+                <button class="mini-btn primary" id="txtBtn">Bajar TXT</button>
+                <button class="mini-btn primary" id="jsonBtn">Bajar JSON</button>
+                <button class="mini-btn primary" id="midiBtn">Exportar MIDI</button>
+                <button class="mini-btn" id="copyBtn">Copiar</button>
+                <button class="mini-btn" id="importBtn">Importar JSON</button>
+                <button class="mini-btn solo" id="lyricsBtn">Letra / TAB</button>
+                <button class="mini-btn" id="viewToggleBtn">Vista diapasón</button>
+            </div>
+            <div class="prod-panel">
+                <h4 id="productionTitle">Producción / monitoreo</h4>
+                <div class="prod-grid">
+                    <div><label id="routingLabel">Ruteo audio</label><select id="routingSelect" class="select"><option value="normal">Normal estéreo</option><option value="split">Click L / Música R</option></select></div>
+                    <div><label id="fretModeLabel">Diapasón</label><select id="fretModeSelect" class="select"><option value="guitar">Guitarra</option><option value="ukulele">Ukelele</option><option value="bass">Bajo</option></select></div>
+                    <div><label id="tuningLabel">Afinación maestra</label><select id="tuningSelect" class="select"><option value="440">A = 440 Hz</option><option value="432">A = 432 Hz</option><option value="444">A = 444 Hz</option><option value="custom">Personalizada</option></select></div>
+                    <div class="wide"><label id="customTuningLabel">Frecuencia personalizada A4</label><input id="tuningCustom" class="input" type="number" min="390" max="470" step="0.01" value="440" /></div>
+                </div>
+            </div>
+            <input type="file" id="importFile" class="hidden-file" accept="application/json,.json" />
+            <div class="hint" id="saveStatus">Auto-guardado local activo. Botón Guardar local = navegador actual. Respaldo real = Bajar JSON.</div>
+            <hr style="border:0;border-top:1px solid #303030;margin:12px 0" />
+            <h3>Mapa de ritmos</h3>
+            <div class="hint" id="styleHelp"></div>
+        </div>
+    </section>
+</main>
+
+<div class="modal-backdrop" id="lyricsModal" role="dialog" aria-modal="true" aria-label="Editor de letra y tab">
+    <div class="modal">
+        <div class="modal-head">
+            <div>
+                <h2>Letra + TAB de la canción</h2>
+                <div class="arrangement-note">Escribe la letra por sección. Al bajar TXT, saldrá junto con acordes, bajo, notas y compases.</div>
+            </div>
+            <div class="button-row" style="margin-top:0">
+                <button class="mini-btn primary" id="saveLyricsBtn">Guardar letra</button>
+                <button class="mini-btn" id="closeLyricsBtn">Cerrar</button>
+            </div>
+        </div>
+        <div class="lyrics-song-map" id="lyricsMap"></div>
+        <div class="lyrics-grid" id="lyricsGrid"></div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="helpModal" role="dialog" aria-modal="true" aria-label="Guía de uso">
+    <div class="modal">
+        <div class="modal-head">
+            <div>
+                <h2>Manual completo de Piano Composer Station</h2>
+                <div class="arrangement-note">Guía práctica para componer, practicar, escuchar, escribir letra, crear solos y guardar una canción completa.</div>
+            </div>
+            <button class="mini-btn" id="closeHelpBtn">Cerrar</button>
+        </div>
+        <div class="help-body">
+            <div class="help-block wide">
+                <h3>Flujo recomendado para crear una canción</h3>
+                <div class="help-flow">
+                    <div class="help-step"><strong>1. Define la idea</strong>Escribe el nombre de la canción, escoge estilo y tempo.</div>
+                    <div class="help-step"><strong>2. Arma secciones</strong>Selecciona Intro, Verso, Pre-coro, Coro, Interludio o Solo y crea sus acordes.</div>
+                    <div class="help-step"><strong>3. Prueba el sonido</strong>Usa Start Groove para una sección o Escuchar canción para todo el arreglo.</div>
+                    <div class="help-step"><strong>4. Guarda el proyecto</strong>Baja JSON como archivo maestro y TXT como documento de letra/acordes.</div>
+                </div>
+                <div class="help-note"><b>Regla de oro:</b> cada vez que logres una versión que te guste, pulsa <b>Bajar JSON</b>. Ese archivo es el proyecto editable completo.</div>
+            </div>
+
+            <div class="help-block">
+                <h3>1. Zona superior: canción, estilo y sección</h3>
+                <ul>
+                    <li><b>Nombre de la canción:</b> cambia el título del proyecto. Sirve para el TXT, el JSON y la guía de trabajo.</li>
+                    <li><b>Autor:</b> escribe el compositor, arreglista o creador de la canción. El dato sale en el TXT y queda dentro del JSON.</li>
+                    <li><b>Estilo musical:</b> cambia el patrón de acompañamiento. No cambia tus acordes; cambia cómo se tocan.</li>
+                    <li><b>Instrumento guía:</b> cambia el color sonoro usado por la app. En v14, guitarra y ukelele tienen ataque tipo cuerda pulsada, y el saxo guía usa vibrato y filtro tipo viento. Siguen siendo sonidos sintéticos del navegador, no samples profesionales.</li>
+                    <li><b>Sección:</b> define qué parte estás editando: Introducción, Verso, Verso 1, Verso 2, Verso 3, Pre-coro, Coro, Interludio o Solo.</li>
+                    <li><b>BPM:</b> velocidad de la canción. Puedes usar presets o mover el deslizador.</li>
+                </ul>
+                <h4>Ejemplo</h4>
+                Si eliges <b>Coro</b>, todo lo que edites en el editor pertenece al Coro, no a la Introducción ni al Verso.
+            </div>
+
+            <div class="help-block">
+                <h3>2. Estilos musicales</h3>
+                <table class="help-table">
+                    <tr><th>Estilo</th><th>Uso práctico</th></tr>
+                    <tr><td>Funk</td><td>Contratiempos, ghost chords y bajo sincopado. Bueno para groove.</td></tr>
+                    <tr><td>Rock</td><td>Golpes fuertes y acompañamiento directo.</td></tr>
+                    <tr><td>Balada</td><td>Arpegio suave, más aire y más sostén.</td></tr>
+                    <tr><td>Bossa</td><td>Bajo alternado y acordes sincopados.</td></tr>
+                    <tr><td>Jazz</td><td>Comping desplazado y sensación swing.</td></tr>
+                    <tr><td>Blues</td><td>Shuffle y respuesta rítmica.</td></tr>
+                    <tr><td>Pop</td><td>Patrón estable para componer rápido.</td></tr>
+                    <tr><td>Bolero</td><td>Acompañamiento romántico, bajo lento y acordes suaves en contratiempo.</td></tr>
+                    <tr><td>Salsa</td><td>Tumbao simplificado: bajo anticipado y acordes rítmicos sincopados.</td></tr>
+                    <tr><td>Cumbia</td><td>Pulso bailable y estable; útil para probar progresiones latinas sencillas.</td></tr>
+                    <tr><td>Reggae</td><td>Acordes en off-beat, sensación relajada y espacio para melodía.</td></tr>
+                </table>
+            </div>
+
+            <div class="help-block wide">
+                <h3>3. Instrumento guía: piano, guitarra, saxo y más</h3>
+                <p>La app usa síntesis interna del navegador. Eso significa que no carga librerías pesadas ni samples externos. El selector de instrumento sirve como <b>color de referencia</b> para componer, practicar y decidir arreglos.</p>
+                <table class="help-table">
+                    <tr><th>Instrumento</th><th>Uso recomendado</th></tr>
+                    <tr><td>Piano</td><td>Base equilibrada para acordes, bajo y melodía.</td></tr>
+                    <tr><td>Piano eléctrico</td><td>Color suave para funk, pop, jazz y balada.</td></tr>
+                    <tr><td>Guitarra</td><td>Acordes más cortos y ataque más marcado; útil para rasgueos simplificados.</td></tr>
+                    <tr><td>Ukelele</td><td>Sonido más brillante y seco para ideas ligeras.</td></tr><tr><td>Bajo eléctrico</td><td>Vista de cuatro cuerdas E1–A1–D2–G2 para construir líneas, dobles notas y voicings graves.</td></tr>
+                    <tr><td>Órgano</td><td>Sostiene más los acordes; útil para rock, blues y gospel sencillo.</td></tr>
+                    <tr><td>Saxo guía</td><td>Funciona mejor para melodías/solos. Para acordes es solo referencia armónica.</td></tr>
+                    <tr><td>Synth</td><td>Color moderno para probar ideas electrónicas o demos rápidas.</td></tr>
+                </table>
+                <div class="help-note"><b>Nota honesta:</b> para publicar audio final conviene exportar la idea y producirla en un DAW con instrumentos virtuales reales. Esta app es para composición, práctica, estructura y prueba de arreglos.</div>
+                <h4>Teclado táctil y acordes</h4>
+                <ul>
+                    <li>En iPad o pantallas táctiles puedes tocar varias teclas al mismo tiempo para probar acordes.</li>
+                    <li>El botón <b>Acorde ON/OFF</b> activa un modo útil para componer: toca una nota, luego otra, luego otra, y la app va armando el acorde.</li>
+                    <li>Para limpiar el acorde sostenido, apaga <b>Acorde ON</b>. La selección se borra y vuelves al teclado normal.</li>
+                </ul>
+            </div>
+
+            <div class="help-block wide">
+                <h3>4. Editor de progresión: cómo cambiar acordes</h3>
+                <ol>
+                    <li>Arriba, selecciona la <b>sección</b> que quieres trabajar.</li>
+                    <li>En <b>Acorde seleccionado</b>, elige el acorde que vas a editar.</li>
+                    <li>En <b>Nombre</b>, escribe el nombre musical: <code>Fmaj13</code>, <code>Cmaj7</code>, <code>Am6</code>, <code>G6/9</code>.</li>
+                    <li>En <b>Bajo</b>, escribe la nota grave con octava: <code>F2</code>, <code>C2</code>, <code>A1</code>, <code>Do2</code>.</li>
+                    <li>En <b>Notas del acorde</b>, escribe las notas que debe tocar el piano: <code>E3 A3 D4 F4</code>.</li>
+                    <li>En <b>Compases</b>, define cuánto dura ese acorde. <b>1</b> = un compás completo; <b>2</b> = dos compases.</li>
+                    <li>Pulsa <b>Escuchar</b> para probar ese acorde sin guardar cambios.</li>
+                    <li>Pulsa <b>Aplicar</b> para guardar el cambio en esa sección.</li>
+                </ol>
+                <div class="help-note"><b>Importante:</b> debajo del editor aparece el <b>Mapa de notas de la sección seleccionada</b>. Ahí confirmas qué acordes, bajos, notas y compases llevas en esa parte.</div>
+            </div>
+
+            <div class="help-block">
+                <h3>5. Botones del editor</h3>
+                <ul>
+                    <li><b>Escuchar:</b> prueba el acorde seleccionado.</li>
+                    <li><b>Aplicar:</b> guarda los cambios de nombre, bajo, notas, compases y volumen.</li>
+                    <li><b>Agregar acorde:</b> añade un acorde nuevo al final de la sección actual.</li>
+                    <li><b>Duplicar:</b> copia el acorde seleccionado para repetirlo o modificarlo.</li>
+                    <li><b>Borrar:</b> elimina el acorde seleccionado.</li>
+                    <li><b>Reset sección:</b> devuelve solo esa sección a la base original.</li>
+                    <li><b>Reset total:</b> devuelve toda la canción a la base original.</li>
+                </ul>
+            </div>
+
+            <div class="help-block">
+                <h3>6. Formato de notas</h3>
+                <p>La app acepta notas en inglés y en solfeo.</p>
+                <table class="help-table">
+                    <tr><th>Formato</th><th>Ejemplo</th></tr>
+                    <tr><td>Inglés</td><td><code>C3 E3 G3 Bb3</code></td></tr>
+                    <tr><td>Solfeo</td><td><code>Do3 Mi3 Sol3 Sib3</code></td></tr>
+                    <tr><td>Sostenidos</td><td><code>F#3</code> o <code>Fa#3</code></td></tr>
+                    <tr><td>Bemoles</td><td><code>Bb3</code> o <code>Sib3</code></td></tr>
+                </table>
+                <div class="help-note">Usa octavas bajas para el bajo, por ejemplo <code>F2</code>. Usa octavas medias para acordes, por ejemplo <code>E3 A3 D4 F4</code>.</div>
+            </div>
+
+            <div class="help-block wide">
+                <h3>7. Sección y melodía / solo</h3>
+                <p>Cada sección puede tener su propia melodía o solo. Esto permite que la Introducción tenga una frase, el Interludio otra y el Solo principal otra.</p>
+                <ol>
+                    <li>Selecciona una sección arriba: por ejemplo <b>Introducción</b> o <b>Interludio</b>.</li>
+                    <li>En <b>Tonalidad de esta sección</b>, escribe la tonalidad base: <code>C</code>, <code>F</code>, <code>Am</code>, <code>Do</code>.</li>
+                    <li>Escoge una <b>Escala</b>: mayor, menor, blues, pentatónica, dórica o mixolidia.</li>
+                    <li>Escribe la frase en <b>Melodía / solo de esta sección</b>.</li>
+                    <li>Pulsa <b>Probar solo</b> para escuchar solo la línea melódica.</li>
+                    <li>Pulsa <b>Sugerir frase</b> si quieres una idea automática según tonalidad y escala.</li>
+                    <li>Pulsa <b>Guardar línea</b> para dejar esa melodía pegada a la sección.</li>
+                </ol>
+                <h4>Formato del solo</h4>
+                <p><code>C4:2 Eb4:2 F4:1 G4:1 R:2 Bb4:2 G4:2 F4:4</code></p>
+                <ul>
+                    <li><code>C4:2</code> = nota C4 durante 2 semicorcheas.</li>
+                    <li><code>R:2</code> = silencio durante 2 semicorcheas.</li>
+                    <li>Si escribes solo <code>G4</code>, la app usa una duración corta por defecto.</li>
+                </ul>
+                <div class="help-note"><b>Cómo se empalma con la música:</b> cuando <b>Solo ON</b> está activo, la melodía de la sección suena encima de la progresión de acordes de esa misma sección.</div>
+            </div>
+
+            <div class="help-block">
+                <h3>8. Reproducción, metrónomo y práctica</h3>
+                <ul>
+                    <li><b>Start Groove:</b> reproduce en loop la sección seleccionada. Ideal para practicar un verso, un coro o un interludio sin escuchar toda la canción.</li>
+                    <li><b>Escuchar canción:</b> reproduce la estructura completa en orden. La app pasa por Introducción, Versos, Pre-coro, Coro, Interludio y Solo según las secciones que tengan acordes.</li>
+                    <li><b>Metrónomo ON/OFF:</b> activa o apaga el click audible. Al activarlo, la app hace una prueba de 4 golpes para confirmar que sí está sonando. El primer golpe del compás suena más agudo/fuerte y los otros golpes son más secos.</li>
+                    <li><b>Solo ON/OFF:</b> decide si las melodías/solos guardados suenan encima de los acordes. Si está OFF, solo escuchas la base armónica/rítmica.</li>
+                    <li><b>Guardar local:</b> guarda el estado actual en el navegador actual. No descarga archivo; solo queda en ese computador/navegador.</li>
+                </ul>
+                <div class="help-note">Cuando escuchas toda la canción, mira el indicador <b>Parte:</b> debajo del acorde actual para saber si va en Intro, Verso, Coro, Interludio o Solo.</div>
+            </div>
+
+            <div class="help-block">
+                <h3>9. Bombillitos / mapa de ritmo</h3>
+                <p>Los bombillitos representan 16 pasos por compás: <b>1 e &amp; a / 2 e &amp; a / 3 e &amp; a / 4 e &amp; a</b>.</p>
+                <ul>
+                    <li><b>Verde:</b> golpe de acorde fuerte.</li>
+                    <li><b>Magenta:</b> bajo.</li>
+                    <li><b>Gris:</b> ghost chord o golpe suave.</li>
+                    <li><b>Amarillo:</b> melodía o solo.</li>
+                    <li><b>Borde blanco:</b> paso que está sonando en ese momento.</li>
+                </ul>
+            </div>
+
+            <div class="help-block wide">
+                <h3>10. Letra / TAB</h3>
+                <ol>
+                    <li>Pulsa <b>Letra / TAB</b>.</li>
+                    <li>Escribe la letra en la caja de cada sección.</li>
+                    <li>Arriba verás el mapa armónico de la canción para ubicar acordes y estructura.</li>
+                    <li>Pulsa <b>Guardar letra</b>.</li>
+                    <li>Luego pulsa <b>Bajar TXT</b> para generar un documento con letra, acordes, bajos, notas y melodías.</li>
+                </ol>
+                <div class="help-note">La letra no cambia el audio. Sirve para documentar la composición y exportar una guía completa de la canción.</div>
+            </div>
+
+            <div class="help-block">
+                <h3>11. Guardar, JSON, importar y compartir</h3>
+                <ul>
+                    <li><b>Guardar local:</b> guarda en el almacenamiento interno del navegador. Sirve para continuar si cierras y vuelves a abrir este mismo HTML en el mismo equipo. No crea archivo descargable.</li>
+                    <li><b>Bajar JSON:</b> descarga el proyecto maestro editable. Incluye título, autor, estilo, BPM, instrumento guía, acordes, bajos, notas, compases, letra y melodías/solos por sección.</li>
+                    <li><b>Importar JSON:</b> carga un JSON que bajaste antes. La app reemplaza lo que está en pantalla por ese proyecto guardado.</li>
+                    <li><b>Bajar TXT:</b> exporta un documento legible con mapa armónico, notas, letra y líneas melódicas. Sale en el idioma activo de la interfaz. Es para leer, imprimir o compartir, no para reimportar.</li>
+                    <li><b>Copiar:</b> copia al portapapeles el mismo contenido textual que sale en el TXT.</li>
+                </ul>
+                <div class="help-note"><b>Recomendación:</b> usa <b>Guardar local</b> mientras trabajas, pero al final de cada versión importante pulsa <b>Bajar JSON</b>. Ese archivo es el respaldo real y portable.</div>
+            </div>
+
+            <div class="help-block">
+                <h3>12. Consejos musicales rápidos</h3>
+                <ul>
+                    <li>Para empezar una canción, crea primero <b>Intro + Verso + Coro</b>.</li>
+                    <li>Si el acorde cambia muy rápido, sube <b>Compases</b> a 2 o 4.</li>
+                    <li>Para acompañamiento más suave, prueba <b>Balada</b> o <b>Pop</b>.</li>
+                    <li>Para groove, prueba <b>Funk</b>, <b>Bossa</b>, <b>Blues</b>, <b>Salsa</b> o <b>Cumbia</b>.</li>
+                    <li>Para solos, empieza con pocas notas y muchos silencios. Una melodía con aire suele sonar mejor.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Studio 936 Composer v22 Patch: iPad layout based on v17 stability + v20 producer features -->
+
+<!-- Studio 936 Composer v23 Patch: Piano Close-Up + Real Chord Charts + Producer UX cleanup -->
+
+<!-- v25 UX Clean Workspace Patch: interfaz por paneles, lógica musical intacta -->
+
+<!-- v25.1 UX Panel Fix: workspace header, close buttons, arrangement selector -->
+
+<!-- v25.2 UX Instrument First Patch: compact panels, no piano cover, local close buttons -->
+
+<!-- v25.3 UX Left Dock Instrument Patch: solo interfaz, sin tocar lógica musical -->
+
+<!-- v25.4 UX Left Dock Polish: fixed panel close + compact structure cards + stable instrument-first layout -->
+
+<!-- v25.8 Editor Review: workspace order + editor section selector + note validation + updated help -->
+<script src="js/instruments.js?v=0720"></script>
+<script src="js/rhythm-engine.js"></script>
+<script src="js/song-model.js?v=cambio-239-isnewsong"></script>
+<script src="js/storage.js"></script>
+<script src="js/piano.js"></script>
+<script src="js/fretboard.js?v=0714"></script>
+<script src="js/editor.js"></script>
+<script src="js/export-text.js"></script>
+<script src="js/lyrics-tab.js"></script>
+<script src="js/help.js"></script>
+<script src="js/lead-sheet.js"></script>
+<script src="js/midi-export.js"></script>
+<script src="js/flow8.js"></script>
+<script src="js/i18n-core.js?v=cambio-167-player-skin"></script>
+<script src="js/i18n.js?v=cambio-166-936player"></script>
+<script src="js/ui-tooltips.js?v=cambio-162-tooltip-body"></script>
+<script src="js/arrangement.js"></script>
+<script src="js/music-theory.js"></script>
+<script src="js/audio-engine.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/ui-bindings.js"></script>
+<script src="js/core/instrument-surface-manager.js?v=0738-oncellplay-passthrough"></script>
+<script src="js/suite-pro-practice.js"></script>
+<script src="js/suite-pro-drums.js"></script>
+<script src="js/suite-pro-mixer.js"></script>
+<script src="js/suite-pro-recorder.js"></script>
+<script src="js/suite-pro-midi.js?v=cambio-146-live-play"></script>
+<script src="js/suite-pro-chart-v260-cambio100.js?v=cambio-239-newsong-empty"></script>
+<script src="js/suite-pro-structure-v489-cambio94.js?v=cambio-235-draft-publish"></script>
+<script src="js/suite-pro-string-instruments.js?v=0114-piano-drums-not-string"></script>
+<script src="js/suite-pro-voicing-store.js?v=100"></script>
+<script src="js/suite-pro-editor-piano.js?v=110"></script>
+<script src="js/suite-pro-string-surface.js?v=0737-editor-sync-chart-guard"></script>
+<script src="js/suite-pro-drum-surface.js?v=0727"></script>
+<script src="js/suite-pro-drum-patterns.js?v=0727"></script>
+<script src="js/suite-pro-bass-line.js?v=070"></script>
+<script src="js/suite-pro-sequencer-core.js?v=071"></script>
+<script src="js/suite-pro-lead-line.js?v=0713"></script>
+<script src="js/suite-pro-drum-composer.js?v=07184"></script>
+<script src="js/suite-pro-editor.js?v=0755-data-source-of-truth"></script>
+<script src="js/suite-pro-compose-v66-cambio50.js?v=cambio-246-abrir-cancion"></script>
+<script src="js/suite-pro.js?v=cambio-112-openarea"></script>
+<script src="js/suite-pro-library.js?v=cambio-250-autoheal-404"></script>
+<script src="js/suite-pro-channel-mixer.js?v=cambio-135-full-redesign"></script>
+<script src="js/app.js?v=cambio-247-savelocal-library-sync"></script>
+<!-- Studio 936 v0.7.0.3: persistent Editor instrument tabs hotfix -->
+<!-- Studio 936 v0.7.2.15: Piano Editor Reopen Final -->
+    <button class="btn btn-dark icon-btn" id="helpBtn" data-tip="Ayuda">❓</button>
+</body>
+</html>
+
+<!-- v25.5 UX Header Close Fix: panel headers with fixed close in header; no music logic touched -->
+
+<!-- v25.6 UX Polish: modal layering, aligned close button, clearer current-order selector. No music logic changed. -->
+
+<!-- v25.9 Editor/Structure Sync: UX only. Editor selector now follows song arrangement blocks; structure panel no longer shows editor selector. -->
