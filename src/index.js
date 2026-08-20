@@ -13,6 +13,13 @@
 //   POST   /api/compositions      -> crea una composición nueva
 //   PUT    /api/compositions/:id  -> actualiza una composición tuya
 //   DELETE /api/compositions/:id  -> borra una composición tuya
+//
+//   Cambio 254 — Pistas grabadas (voz/instrumento), a R2 + D1:
+//   POST   /api/tracks?compositionId=&section=&instrument=&label=&durationSec=
+//                                  -> sube el audio (cuerpo crudo) y lo registra
+//   GET    /api/tracks?compositionId=X -> lista tus pistas de esa composición
+//   GET    /api/tracks/:id/file    -> sirve el audio real desde R2 (con sesión)
+//   DELETE /api/tracks/:id         -> borra la pista (D1 + R2)
 
 import { createAuth } from "./auth.js";
 
@@ -55,6 +62,23 @@ async function ensureSchema(env) {
   // Cambio 235: agregar columna status a tablas existentes que no la tengan
   // (ALTER TABLE IF NOT EXISTS no existe en SQLite, así que ignoramos el error)
   try { await env.DB.prepare("ALTER TABLE compositions ADD COLUMN status TEXT NOT NULL DEFAULT 'draft'").run(); } catch(_) {}
+
+  // Cambio 254: pistas grabadas (voz/instrumento) por sección — el audio
+  // real vive en R2 (binding MEDIA); aquí solo la metadata + la llave R2.
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS tracks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      composition_id TEXT NOT NULL,
+      section TEXT NOT NULL,
+      instrument TEXT NOT NULL,
+      label TEXT,
+      r2_key TEXT NOT NULL,
+      content_type TEXT,
+      duration_sec INTEGER,
+      created_at INTEGER NOT NULL
+    )`
+  ).run();
 }
 
 // Fase B: helper compartido — confirma que hay sesión activa, o corta con
@@ -78,6 +102,21 @@ function rowToComposition(row) {
     project: row.project ? JSON.parse(row.project) : {},
     status: row.status || 'draft',
     updated: row.updated_at,
+  };
+}
+
+function rowToTrack(row) {
+  return {
+    id: row.id,
+    compositionId: row.composition_id,
+    section: row.section,
+    instrument: row.instrument,
+    label: row.label || "",
+    durationSec: row.duration_sec || 0,
+    createdAt: row.created_at,
+    // La app pide el audio real a este endpoint aparte (con sesión),
+    // no se manda la llave interna de R2 al frontend.
+    fileUrl: `/api/tracks/${row.id}/file`,
   };
 }
 
@@ -226,6 +265,107 @@ export default {
       if (result.meta.changes === 0) {
         return json({ error: "No encontrada, o no es tuya." }, 404, request);
       }
+      return json({ ok: true }, 200, request);
+    }
+
+    // -----------------------------------------------------------------
+    // Cambio 254: Pistas grabadas (voz/instrumento) — audio real en R2,
+    // metadata en D1. Todas requieren sesión activa.
+    // -----------------------------------------------------------------
+    if (url.pathname === "/api/tracks" && request.method === "POST") {
+      await ensureSchema(env);
+      const session = await requireSession(request, env);
+      if (!session) return json({ error: "No autenticado." }, 401, request);
+      if (!env.MEDIA) return json({ error: "R2 no configurado en este Worker." }, 500, request);
+
+      const compositionId = url.searchParams.get("compositionId") || "";
+      const section = url.searchParams.get("section") || "";
+      const instrument = url.searchParams.get("instrument") || "otro";
+      const label = url.searchParams.get("label") || "";
+      const durationSec = parseInt(url.searchParams.get("durationSec") || "0", 10) || 0;
+      if (!compositionId || !section) {
+        return json({ error: "Faltan 'compositionId' o 'section'." }, 400, request);
+      }
+
+      const audioBuffer = await request.arrayBuffer();
+      if (!audioBuffer || audioBuffer.byteLength === 0) {
+        return json({ error: "Cuerpo de audio vacío." }, 400, request);
+      }
+      // Límite honesto: 25 MB por toma (una toma vocal/instrumento de
+      // varios minutos cabe de sobra; esto evita que un error del
+      // navegador mande un archivo gigante sin querer).
+      if (audioBuffer.byteLength > 25 * 1024 * 1024) {
+        return json({ error: "Archivo de audio demasiado grande (máximo 25 MB por toma)." }, 413, request);
+      }
+
+      const contentType = request.headers.get("Content-Type") || "audio/webm";
+      const id = crypto.randomUUID();
+      const r2Key = `tracks/${session.user.id}/${compositionId}/${section}/${id}`;
+
+      await env.MEDIA.put(r2Key, audioBuffer, {
+        httpMetadata: { contentType },
+      });
+
+      const now = Date.now();
+      await env.DB.prepare(
+        `INSERT INTO tracks
+          (id, user_id, composition_id, section, instrument, label, r2_key, content_type, duration_sec, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        id, session.user.id, compositionId, section, instrument, label,
+        r2Key, contentType, durationSec, now
+      ).run();
+
+      return json({ ok: true, id, fileUrl: `/api/tracks/${id}/file` }, 200, request);
+    }
+
+    if (url.pathname === "/api/tracks" && request.method === "GET") {
+      await ensureSchema(env);
+      const session = await requireSession(request, env);
+      if (!session) return json({ error: "No autenticado." }, 401, request);
+      const compositionId = url.searchParams.get("compositionId") || "";
+      if (!compositionId) return json({ error: "Falta 'compositionId'." }, 400, request);
+      const { results } = await env.DB.prepare(
+        "SELECT * FROM tracks WHERE user_id = ? AND composition_id = ? ORDER BY created_at ASC"
+      ).bind(session.user.id, compositionId).all();
+      return json({ tracks: results.map(rowToTrack) }, 200, request);
+    }
+
+    if (url.pathname.startsWith("/api/tracks/") && url.pathname.endsWith("/file") && request.method === "GET") {
+      await ensureSchema(env);
+      const session = await requireSession(request, env);
+      if (!session) return json({ error: "No autenticado." }, 401, request);
+      if (!env.MEDIA) return json({ error: "R2 no configurado en este Worker." }, 500, request);
+      const id = url.pathname.split("/")[3]; // /api/tracks/:id/file
+      const row = await env.DB.prepare(
+        "SELECT * FROM tracks WHERE id = ? AND user_id = ?"
+      ).bind(id, session.user.id).first();
+      if (!row) return json({ error: "No encontrada, o no es tuya." }, 404, request);
+      const object = await env.MEDIA.get(row.r2_key);
+      if (!object) return json({ error: "El audio ya no está en R2." }, 404, request);
+      const origin = request.headers.get("Origin");
+      return new Response(object.body, {
+        status: 200,
+        headers: {
+          "Content-Type": row.content_type || "audio/webm",
+          "Access-Control-Allow-Origin": origin || "*",
+          "Access-Control-Allow-Credentials": "true",
+          "Vary": "Origin",
+        },
+      });
+    }
+
+    if (url.pathname.startsWith("/api/tracks/") && request.method === "DELETE") {
+      await ensureSchema(env);
+      const session = await requireSession(request, env);
+      if (!session) return json({ error: "No autenticado." }, 401, request);
+      const id = url.pathname.split("/")[3]; // /api/tracks/:id
+      const row = await env.DB.prepare(
+        "SELECT * FROM tracks WHERE id = ? AND user_id = ?"
+      ).bind(id, session.user.id).first();
+      if (!row) return json({ error: "No encontrada, o no es tuya." }, 404, request);
+      if (env.MEDIA) { try { await env.MEDIA.delete(row.r2_key); } catch (_) {} }
+      await env.DB.prepare("DELETE FROM tracks WHERE id = ? AND user_id = ?").bind(id, session.user.id).run();
       return json({ ok: true }, 200, request);
     }
 
